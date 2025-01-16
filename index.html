@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Management System</title>
+    <style>
+        /* Existing styles remain unchanged */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .navbar {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+        }
+        .navbar a:hover {
+            background-color: #575757;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .stock-section {
+            margin-bottom: 20px;
+        }
+        .stock-section h2 {
+            color: #555;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input[type="number"], input[type="text"], input[type="password"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #5bb75b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        .stock-display {
+            background: #e7f3fe;
+            padding: 10px;
+            border: 1px solid #b8daff;
+            border-radius: 5px;
+        }
+        .alert {
+            color: red;
+        }
+        .login-section {
+            display: none; /* Initially hidden */
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="#" id="nav-stock-in" onclick="showSection('stock-in')">Stock In</a>
+        <a href="#" id="nav-stock-out" onclick="showSection('stock-out')">Stock Out</a>
+        <a href="#" id="nav-stock-in-hand" onclick="showSection('stock-in-hand')">Stock In Hand</a>
+        <a href="#" id="nav-item-delete" onclick="showSection('item-delete')">Delete Item</a>
+        <a href="#" id="nav-bulk-stock" onclick="showSection('bulk-stock')">Bulk Operations</a>
+    </div>
+
+    <div class="container">
+        <h1>VELOCITY STOCK MANAGMENT SYSTEM</h1>
+
+        <div class="login-section" id="login-section">
+            <h2>Admin Login</h2>
+            <label for="admin-password">Password:</label>
+            <input type="password" id="admin-password" placeholder="Enter admin password">
+            <button onclick="login()">Login</button>
+            <div class="alert" id="alert-login"></div>
+        </div>
+
+        <div class="stock-section" id="stock-in" style="display: none;">
+            <h2>Purchase Entry</h2>
+            <label for="stock-in-item">Item Name:</label>
+            <input type="text" id="stock-in-item" placeholder="Enter item name">
+            <label for="stock-in-quantity">Quantity:</label>
+            <input type="number" id="stock-in-quantity" placeholder="Enter quantity">
+            <button onclick="stockIn()">Submit</button>
+            <div class="alert" id="alert-stock-in"></div>
+        </div>
+
+        <div class="stock-section" id="stock-out" style="display: none;">
+            <h2>Sales Entry</h2>
+            <label for="stock-out-item">Item Name:</label>
+            <input type="text" id="stock-out-item" placeholder="Enter item name">
+            <label for="stock-out-quantity">Quantity:</label>
+            <input type="number" id="stock-out-quantity" placeholder="Enter quantity">
+            <button onclick="stockOut()">Submit</button>
+            <div class="alert" id="alert-stock-out"></div>
+        </div>
+
+        <div class="stock-section" id="bulk-stock" style="display: none;">
+            <h2>Bulk Stock Operations</h2>
+            <label for="bulk-stock-file">Upload Excel File:</label>
+            <input type="file" id="bulk-stock-file" accept=".xlsx, .xls">
+            <button onclick="importStock()">Import Stock</button>
+            <div class="alert" id="alert-bulk-stock"></div>
+        </div>
+
+        <div class="stock-section" id="stock-in-hand" style="display: none;">
+            <h2>Stock In Hand</h2>
+            <input type="text" id="search-item" placeholder="Search item" oninput="searchItem()">
+            <div class="stock-display" id="stock-display">
+                <p>No items added yet.</p>
+            </div>
+        </div>
+
+        <div class="stock-section" id="item-delete" style="display: none;">
+            <h2>Delete Item</h2>
+            <label for="delete-item">Item Name:</label>
+            <input type="text" id="delete-item" placeholder="Enter item name">
+            <label for="delete-password">Password:</label>
+            <input type="password" id="delete-password" placeholder="Enter password">
+            <button onclick="deleteItem()">Delete Item</button>
+            <div class="alert" id="alert-item-delete"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script>
+        const stock = JSON.parse(localStorage.getItem('stock')) || {};
+        const adminPassword = "admin123"; // Set your admin password here
+        let isAdminLoggedIn = false;
+
+        function showSection(section) {
+            const sections = ['stock-in', 'stock-out', 'stock-in-hand', 'item-delete', 'login-section', 'bulk-stock'];
+            sections.forEach(sec => {
+                document.getElementById(sec).style.display = 'none';
+            });
+
+            if (isAdminLoggedIn || section === 'stock-in-hand' || section === 'item-delete') {
+                document.getElementById(section).style.display = 'block';
+                displayStock();
+            } else if (section === 'stock-in' || section === 'stock-out') {
+                document.getElementById('login-section').style.display = 'block';
+            }
+        }
+
+        function login() {
+            const password = document.getElementById('admin-password').value;
+            const alertBox = document.getElementById('alert-login');
+
+            alertBox.innerHTML = ''; // Clear previous alerts
+
+            if (password === adminPassword) {
+                isAdminLoggedIn = true;
+                alertBox.innerHTML = 'Login successful!';
+                showSection('stock-in'); // Redirect to stock in section after login
+            } else {
+                alertBox.innerHTML = 'Invalid password. Please try again.';
+            }
+        }
+
+        function stockIn() {
+            const itemName = document.getElementById('stock-in-item').value;
+            const quantity = parseInt(document.getElementById('stock-in-quantity').value);
+            const alertBox = document.getElementById('alert-stock-in');
+
+            alertBox.innerHTML = ''; // Clear previous alerts
+
+            if (itemName && quantity > 0) {
+                if (stock[itemName]) {
+                    stock[itemName] += quantity;
+                } else {
+                    stock[itemName] = quantity;
+                }
+                localStorage.setItem('stock', JSON.stringify(stock));
+                displayStock();
+                clearInputs('in');
+            } else {
+                alertBox.innerHTML = 'Please enter a valid item name and quantity.';
+            }
+        }
+
+        function stockOut() {
+            const itemName = document.getElementById('stock-out-item').value;
+            const quantity = parseInt(document.getElementById('stock-out-quantity').value);
+            const alertBox = document.getElementById('alert-stock-out');
+
+            alertBox.innerHTML = ''; // Clear previous alerts
+
+            if (itemName && quantity > 0 && stock[itemName] && stock[itemName] >= quantity) {
+                stock[itemName] -= quantity;
+                if (stock[itemName] === 0) {
+                    delete stock[itemName];
+                }
+                localStorage.setItem('stock', JSON.stringify(stock));
+                displayStock();
+                clearInputs('out');
+            } else {
+                alertBox.innerHTML = 'Please enter a valid item name and quantity or check your stock.';
+            }
+        }
+
+        function deleteItem() {
+            const itemName = document.getElementById('delete-item').value;
+            const password = document.getElementById('delete-password').value;
+            const alertBox = document.getElementById('alert-item-delete');
+
+            alertBox.innerHTML = ''; // Clear previous alerts
+
+            if (password === adminPassword) {
+                if (stock[itemName]) {
+                    delete stock[itemName];
+                    localStorage.setItem('stock', JSON.stringify(stock));
+                    displayStock();
+                    clearInputs('delete');
+                } else {
+                    alertBox.innerHTML = 'Item does not exist.';
+                }
+            } else {
+                alertBox.innerHTML = 'Invalid password.';
+            }
+        }
+
+        function importStock() {
+            const fileInput = document.getElementById('bulk-stock-file');
+            const alertBox = document.getElementById('alert-bulk-stock');
+
+            alertBox.innerHTML = ''; // Clear previous alerts
+
+            const file = fileInput.files[0];
+            if (!file) {
+                alertBox.innerHTML = 'Please select an Excel file.';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // Assuming the first sheet is the one we want
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert the sheet to JSON
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                jsonData.forEach(row => {
+                    const itemName = row[0];
+                    const quantity = row[1];
+                    if (itemName && typeof quantity === 'number' && quantity > 0) {
+                        if (stock[itemName]) {
+                            stock[itemName] += quantity;
+                        } else {
+                            stock[itemName] = quantity;
+                        }
+                    }
+                });
+
+                localStorage.setItem('stock', JSON.stringify(stock));
+                displayStock();
+                alertBox.innerHTML = 'Stock imported successfully!';
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function searchItem() {
+            const searchValue = document.getElementById('search-item').value.toLowerCase();
+            const stockDisplay = document.getElementById('stock-display');
+            stockDisplay.innerHTML = '';
+
+            const filteredItems = Object.entries(stock).filter(([item]) => item.toLowerCase().includes(searchValue));
+
+            if (filteredItems.length === 0) {
+                stockDisplay.innerHTML = '<p>No items found.</p>';
+            } else {
+                filteredItems.forEach(([item, quantity]) => {
+                    stockDisplay.innerHTML += `<p>${item}: ${quantity}</p>`;
+                });
+            }
+        }
+
+        function displayStock() {
+            const stockDisplay = document.getElementById('stock-display');
+            stockDisplay.innerHTML = '';
+
+            if (Object.keys(stock).length === 0) {
+                stockDisplay.innerHTML = '<p>No items added yet.</p>';
+            } else {
+                for (const [item, quantity] of Object.entries(stock)) {
+                    stockDisplay.innerHTML += `<p>${item}: ${quantity}</p>`;
+                }
+            }
+        }
+
+        function clearInputs(type) {
+            if (type === 'in') {
+                document.getElementById('stock-in-item').value = '';
+                document.getElementById('stock-in-quantity').value = '';
+            } else if (type === 'out') {
+                document.getElementById('stock-out-item').value = '';
+                document.getElementById('stock-out-quantity').value = '';
+            } else if (type === 'delete') {
+                document.getElementById('delete-item').value = '';
+                document.getElementById('delete-password').value = '';
+            }
+        }
+
+        // Initially show the login section
+        showSection('login-section');
+
+    </script>
+
+</body>
+</html>
