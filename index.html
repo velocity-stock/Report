@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Management System</title>
     <style>
-        /* Existing styles remain unchanged */
+        /* Styles for the application */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -93,7 +93,7 @@
     </div>
 
     <div class="container">
-        <h1>VELOCITY STOCK MANAGMENT SYSTEM</h1>
+        <h1>VELOCITY STOCK MANAGEMENT SYSTEM</h1>
 
         <div class="login-section" id="login-section">
             <h2>Admin Login</h2>
@@ -156,28 +156,30 @@
         const adminPassword = "admin123"; // Set your admin password here
         let isAdminLoggedIn = false;
 
+        // Function to show specific sections based on user actions
         function showSection(section) {
             const sections = ['stock-in', 'stock-out', 'stock-in-hand', 'item-delete', 'login-section', 'bulk-stock'];
             sections.forEach(sec => {
-                document.getElementById(sec).style.display = 'none';
+                document.getElementById(sec).style.display = 'none'; // Hide all sections
             });
 
             if (isAdminLoggedIn || section === 'stock-in-hand' || section === 'item-delete') {
-                document.getElementById(section).style.display = 'block';
-                displayStock();
+                document.getElementById(section).style.display = 'block'; // Show selected section
+                displayStock(); // Refresh stock display if needed
             } else if (section === 'stock-in' || section === 'stock-out') {
-                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('login-section').style.display = 'block'; // Show login section
             }
         }
 
+        // Function to handle admin login
         function login() {
-            const password = document.getElementById('admin-password').value;
+            const password = document.getElementById('admin-password').value; // Accessing input data
             const alertBox = document.getElementById('alert-login');
 
             alertBox.innerHTML = ''; // Clear previous alerts
 
             if (password === adminPassword) {
-                isAdminLoggedIn = true;
+                isAdminLoggedIn = true; // Set admin login status
                 alertBox.innerHTML = 'Login successful!';
                 showSection('stock-in'); // Redirect to stock in section after login
             } else {
@@ -185,60 +187,66 @@
             }
         }
 
+        // Function to handle stock in
         function stockIn() {
-            const itemName = document.getElementById('stock-in-item').value;
-            const quantity = parseInt(document.getElementById('stock-in-quantity').value);
+            const itemName = document.getElementById('stock-in-item').value; // Accessing item name input
+            const quantity = parseInt(document.getElementById('stock-in-quantity').value); // Accessing quantity input
             const alertBox = document.getElementById('alert-stock-in');
 
             alertBox.innerHTML = ''; // Clear previous alerts
 
+            // Validate input and update stock
             if (itemName && quantity > 0) {
                 if (stock[itemName]) {
-                    stock[itemName] += quantity;
+                    stock[itemName] += quantity; // Update existing stock
                 } else {
-                    stock[itemName] = quantity;
+                    stock[itemName] = quantity; // Add new stock item
                 }
-                localStorage.setItem('stock', JSON.stringify(stock));
-                displayStock();
-                clearInputs('in');
+                localStorage.setItem('stock', JSON.stringify(stock)); // Save to local storage
+                displayStock(); // Refresh stock display
+                clearInputs('in'); // Clear input fields
             } else {
                 alertBox.innerHTML = 'Please enter a valid item name and quantity.';
             }
         }
 
+        // Function to handle stock out
         function stockOut() {
-            const itemName = document.getElementById('stock-out-item').value;
-            const quantity = parseInt(document.getElementById('stock-out-quantity').value);
+            const itemName = document.getElementById('stock-out-item').value; // Accessing item name input
+            const quantity = parseInt(document.getElementById('stock-out-quantity').value); // Accessing quantity input
             const alertBox = document.getElementById('alert-stock-out');
 
             alertBox.innerHTML = ''; // Clear previous alerts
 
+            // Validate input and update stock
             if (itemName && quantity > 0 && stock[itemName] && stock[itemName] >= quantity) {
-                stock[itemName] -= quantity;
+                stock[itemName] -= quantity; // Reduce stock
                 if (stock[itemName] === 0) {
-                    delete stock[itemName];
+                    delete stock[itemName]; // Remove item if stock is zero
                 }
-                localStorage.setItem('stock', JSON.stringify(stock));
-                displayStock();
-                clearInputs('out');
+                localStorage.setItem('stock', JSON.stringify(stock)); // Save to local storage
+                displayStock(); // Refresh stock display
+                clearInputs('out'); // Clear input fields
             } else {
                 alertBox.innerHTML = 'Please enter a valid item name and quantity or check your stock.';
             }
         }
 
+        // Function to delete an item
         function deleteItem() {
-            const itemName = document.getElementById('delete-item').value;
-            const password = document.getElementById('delete-password').value;
+            const itemName = document.getElementById('delete-item').value; // Accessing item name input
+            const password = document.getElementById('delete-password').value; // Accessing password input
             const alertBox = document.getElementById('alert-item-delete');
 
             alertBox.innerHTML = ''; // Clear previous alerts
 
+            // Validate password and delete item
             if (password === adminPassword) {
                 if (stock[itemName]) {
-                    delete stock[itemName];
-                    localStorage.setItem('stock', JSON.stringify(stock));
-                    displayStock();
-                    clearInputs('delete');
+                    delete stock[itemName]; // Remove item from stock
+                    localStorage.setItem('stock', JSON.stringify(stock)); // Save to local storage
+                    displayStock(); // Refresh stock display
+                    clearInputs('delete'); // Clear input fields
                 } else {
                     alertBox.innerHTML = 'Item does not exist.';
                 }
@@ -247,13 +255,14 @@
             }
         }
 
+        // Function to import stock from Excel file
         function importStock() {
-            const fileInput = document.getElementById('bulk-stock-file');
+            const fileInput = document.getElementById('bulk-stock-file'); // Accessing file input
             const alertBox = document.getElementById('alert-bulk-stock');
 
             alertBox.innerHTML = ''; // Clear previous alerts
 
-            const file = fileInput.files[0];
+            const file = fileInput.files[0]; // Get the first file from the input
             if (!file) {
                 alertBox.innerHTML = 'Please select an Excel file.';
                 return;
@@ -261,65 +270,67 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
+                const data = new Uint8Array(e.target.result); // Read file data
                 const workbook = XLSX.read(data, { type: 'array' });
-
-                // Assuming the first sheet is the one we want
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
+                const firstSheetName = workbook.SheetNames[0]; // Get the name of the first sheet
+                const worksheet = workbook.Sheets[firstSheetName]; // Get the first sheet data
 
                 // Convert the sheet to JSON
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
                 jsonData.forEach(row => {
-                    const itemName = row[0];
-                    const quantity = row[1];
+                    const itemName = row[0]; // Accessing item name from the row
+                    const quantity = row[1]; // Accessing quantity from the row
                     if (itemName && typeof quantity === 'number' && quantity > 0) {
                         if (stock[itemName]) {
-                            stock[itemName] += quantity;
+                            stock[itemName] += quantity; // Update existing stock
                         } else {
-                            stock[itemName] = quantity;
+                            stock[itemName] = quantity; // Add new stock item
                         }
                     }
                 });
 
-                localStorage.setItem('stock', JSON.stringify(stock));
-                displayStock();
+                localStorage.setItem('stock', JSON.stringify(stock)); // Save to local storage
+                displayStock(); // Refresh stock display
                 alertBox.innerHTML = 'Stock imported successfully!';
             };
 
-            reader.readAsArrayBuffer(file);
+            reader.readAsArrayBuffer(file); // Read the file as an array buffer
         }
 
+        // Function to search for items in stock
         function searchItem() {
-            const searchValue = document.getElementById('search-item').value.toLowerCase();
+            const searchValue = document.getElementById('search-item').value.toLowerCase(); // Accessing search input
             const stockDisplay = document.getElementById('stock-display');
-            stockDisplay.innerHTML = '';
+            stockDisplay.innerHTML = ''; // Clear previous display
 
+            // Filter items by search term
             const filteredItems = Object.entries(stock).filter(([item]) => item.toLowerCase().includes(searchValue));
 
             if (filteredItems.length === 0) {
-                stockDisplay.innerHTML = '<p>No items found.</p>';
+                stockDisplay.innerHTML = '<p>No items found.</p>'; // No items matched
             } else {
                 filteredItems.forEach(([item, quantity]) => {
-                    stockDisplay.innerHTML += `<p>${item}: ${quantity}</p>`;
+                    stockDisplay.innerHTML += `<p>${item}: ${quantity}</p>`; // Display matching items
                 });
             }
         }
 
+        // Function to display all items in stock
         function displayStock() {
             const stockDisplay = document.getElementById('stock-display');
             stockDisplay.innerHTML = '';
 
             if (Object.keys(stock).length === 0) {
-                stockDisplay.innerHTML = '<p>No items added yet.</p>';
+                stockDisplay.innerHTML = '<p>No items added yet.</p>'; // No items in stock
             } else {
                 for (const [item, quantity] of Object.entries(stock)) {
-                    stockDisplay.innerHTML += `<p>${item}: ${quantity}</p>`;
+                    stockDisplay.innerHTML += `<p>${item}: ${quantity}</p>`; // Display all items
                 }
             }
         }
 
+        // Function to clear input fields based on action type
         function clearInputs(type) {
             if (type === 'in') {
                 document.getElementById('stock-in-item').value = '';
@@ -335,7 +346,6 @@
 
         // Initially show the login section
         showSection('login-section');
-
     </script>
 
 </body>
